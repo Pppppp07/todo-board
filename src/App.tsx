@@ -348,9 +348,10 @@ function App() {
             return (
               <div
                 key={status}
-                className={`bg-gray-800/40 rounded-2xl p-5 border-t-4 ${config.color} backdrop-blur-xl shadow-lg border-x border-b border-gray-700/50 flex flex-col`}
+                className={`bg-gray-800/40 rounded-2xl p-5 border-t-4 ${config.color} shadow-lg border-x border-b border-gray-700/50 flex flex-col relative`}
               >
-                <div className="flex items-center justify-between mb-5">
+                <div className="absolute inset-0 bg-transparent backdrop-blur-xl rounded-2xl pointer-events-none" style={{ zIndex: -1 }}></div>
+                <div className="flex items-center justify-between mb-5 relative">
                   <h2 className="font-bold text-lg flex items-center gap-2 text-gray-200">
                     <span className="text-xl">{config.emoji}</span> {config.title}
                   </h2>
@@ -599,7 +600,7 @@ function TaskCard({
           </div>
         </div>
       )}
-    </motion.div>
+    </div>
   )
 }
 
