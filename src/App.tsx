@@ -141,7 +141,7 @@ function App() {
 
   // Auto-start tour on first visit
   useEffect(() => {
-    const hasSeenTour = localStorage.getItem('hasSeenTour')
+    const hasSeenTour = localStorage.getItem('hasSeenTour-v2')
     if (!hasSeenTour) {
       setRunTour(true)
     }
@@ -254,7 +254,7 @@ function App() {
     const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED]
     if (finishedStatuses.includes(status)) {
       setRunTour(false)
-      localStorage.setItem('hasSeenTour', 'true')
+      localStorage.setItem('hasSeenTour-v2', 'true')
     }
   }
 
@@ -318,17 +318,6 @@ function App() {
       <div className="relative z-10 max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex flex-col items-center mb-10 relative">
-          <div className="absolute right-0 top-0 flex gap-2">
-            <button 
-              onClick={() => { setRunTour(true); }}
-              className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium bg-gray-800 text-cyan-400 hover:bg-cyan-900/40 rounded-full transition-colors border border-gray-700 hover:border-cyan-700 shadow-sm"
-              title="Mulai Tur Visual"
-            >
-              <PlayCircle size={14} />
-              Tur Interaktif
-            </button>
-          </div>
-          
           <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 mb-3 text-center mt-8 md:mt-0 drop-shadow-sm">
             Todo Board
           </h1>
@@ -485,6 +474,20 @@ function App() {
           })}
         </div>
       </div>
+
+      {/* Floating Tutorial Button */}
+      <motion.button 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => setRunTour(true)}
+        className="fixed bottom-6 right-6 flex items-center gap-2 px-4 py-3 text-sm font-medium bg-gray-800/90 text-cyan-400 hover:bg-gray-800 rounded-full transition-colors border border-gray-700 hover:border-cyan-700 shadow-lg shadow-black/50 backdrop-blur-md z-40 group"
+        title="Mulai Tur Visual"
+      >
+        <PlayCircle size={18} className="group-hover:text-cyan-300" />
+        <span className="hidden sm:inline">Lihat Tutorial</span>
+      </motion.button>
     </div>
   )
 }
