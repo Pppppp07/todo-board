@@ -382,7 +382,33 @@ function App() {
                   </span>
                 </div>
 
-                <Droppable droppableId={status}>
+                <Droppable 
+                  droppableId={status}
+                  renderClone={(dragProvided, dragSnapshot, rubric) => {
+                    const task = tasks.find(t => t.id.toString() === rubric.draggableId);
+                    if (!task) return <div />;
+                    return (
+                      <TaskCard
+                        task={task}
+                        status={status}
+                        editingId={editingId}
+                        editValue={editValue}
+                        setEditValue={setEditValue}
+                        startEditing={startEditing}
+                        saveEdit={saveEdit}
+                        setEditingId={setEditingId}
+                        moveTask={moveTask}
+                        deleteTask={deleteTask}
+                        confirmDelete={confirmDelete}
+                        deletingId={deletingId}
+                        setDeletingId={setDeletingId}
+                        setPreviewImage={setPreviewImage}
+                        provided={dragProvided}
+                        snapshot={dragSnapshot}
+                      />
+                    );
+                  }}
+                >
                   {(provided, snapshot) => (
                     <div 
                       ref={provided.innerRef}
