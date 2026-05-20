@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Trash2, ArrowRight, ArrowLeft, Edit2, Check, X, AlertTriangle, Clock, Flag, ChevronDown, Paperclip, FileText, FileImage, Maximize2 } from 'lucide-react'
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
+import confetti from 'canvas-confetti'
 
 type Priority = 'low' | 'medium' | 'high'
 type ColumnType = 'todo' | 'doing' | 'done'
@@ -192,6 +194,46 @@ function App() {
     return tasks.filter(task => task.status === status)
   }
 
+  const onDragEnd = (result: DropResult) => {
+    const { source, destination, draggableId } = result
+    
+    if (!destination) return
+    
+    if (source.droppableId === destination.droppableId && source.index === destination.index) {
+      return
+    }
+
+    if (destination.droppableId === 'done' && source.droppableId !== 'done') {
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#06b6d4', '#3b82f6', '#10b981', '#f59e0b', '#f43f5e']
+      })
+    }
+
+    const newTasks = [...tasks]
+    const draggedTaskIndex = newTasks.findIndex(t => t.id.toString() === draggableId)
+    if (draggedTaskIndex === -1) return
+    const draggedTask = newTasks[draggedTaskIndex]
+
+    // Update status
+    draggedTask.status = destination.droppableId as ColumnType
+
+    // To respect the index order:
+    const columnTodo = newTasks.filter(t => t.status === 'todo' && t.id.toString() !== draggableId)
+    const columnDoing = newTasks.filter(t => t.status === 'doing' && t.id.toString() !== draggableId)
+    const columnDone = newTasks.filter(t => t.status === 'done' && t.id.toString() !== draggableId)
+
+    const targetColumn = destination.droppableId === 'todo' ? columnTodo 
+                       : destination.droppableId === 'doing' ? columnDoing 
+                       : columnDone
+    
+    targetColumn.splice(destination.index, 0, draggedTask)
+
+    setTasks([...columnTodo, ...columnDoing, ...columnDone])
+  }
+
   return (
     <div className="min-h-screen bg-gray-900 text-white p-4 md:p-8 relative overflow-hidden font-sans">
 
@@ -302,7 +344,8 @@ function App() {
         </div>
 
         {/* Board Layout (3 Kolom) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+        <DragDropContext onDragEnd={onDragEnd}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {columns.map(status => {
             const config = columnConfig[status]
             const columnTasks = getTasksByStatus(status)
@@ -321,48 +364,63 @@ function App() {
                   </span>
                 </div>
 
-                <div className="space-y-3 min-h-[150px] flex-1">
-                  <AnimatePresence mode="popLayout">
-                    {columnTasks.length === 0 ? (
-                      <motion.div
-                        key="empty"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="h-full flex flex-col items-center justify-center py-12 text-gray-600"
-                      >
-                        <div className="w-12 h-12 border-2 border-dashed border-gray-700/60 rounded-full flex items-center justify-center mb-3">
-                          <Check size={20} className="text-gray-700" />
-                        </div>
-                        <p className="text-sm font-medium">Kosong</p>
-                      </motion.div>
-                    ) : (
-                      columnTasks.map(task => (
-                        <TaskCard 
-                          key={task.id} 
-                          task={task} 
-                          status={status}
-                          editingId={editingId}
-                          editValue={editValue}
-                          setEditValue={setEditValue}
-                          startEditing={startEditing}
-                          saveEdit={saveEdit}
-                          setEditingId={setEditingId}
-                          moveTask={moveTask}
-                          deleteTask={deleteTask}
-                          confirmDelete={confirmDelete}
-                          deletingId={deletingId}
-                          setDeletingId={setDeletingId}
-                          setPreviewImage={setPreviewImage}
-                        />
-                      ))
-                    )}
-                  </AnimatePresence>
-                </div>
+                <Droppable droppableId={status}>
+                  {(provided, snapshot) => (
+                    <div 
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className={`space-y-3 min-h-[150px] flex-1 transition-colors rounded-xl ${snapshot.isDraggingOver ? 'bg-gray-700/20' : ''}`}
+                    >
+                      <AnimatePresence mode="popLayout">
+                        {columnTasks.length === 0 && !snapshot.isDraggingOver ? (
+                          <motion.div
+                            key="empty"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="h-full flex flex-col items-center justify-center py-12 text-gray-600"
+                          >
+                            <div className="w-12 h-12 border-2 border-dashed border-gray-700/60 rounded-full flex items-center justify-center mb-3">
+                              <Check size={20} className="text-gray-700" />
+                            </div>
+                            <p className="text-sm font-medium">Kosong</p>
+                          </motion.div>
+                        ) : (
+                          columnTasks.map((task, index) => (
+                            <Draggable key={task.id} draggableId={task.id.toString()} index={index}>
+                              {(dragProvided, dragSnapshot) => (
+                                <TaskCard 
+                                  task={task} 
+                                  status={status}
+                                  editingId={editingId}
+                                  editValue={editValue}
+                                  setEditValue={setEditValue}
+                                  startEditing={startEditing}
+                                  saveEdit={saveEdit}
+                                  setEditingId={setEditingId}
+                                  moveTask={moveTask}
+                                  deleteTask={deleteTask}
+                                  confirmDelete={confirmDelete}
+                                  deletingId={deletingId}
+                                  setDeletingId={setDeletingId}
+                                  setPreviewImage={setPreviewImage}
+                                  provided={dragProvided}
+                                  snapshot={dragSnapshot}
+                                />
+                              )}
+                            </Draggable>
+                          ))
+                        )}
+                      </AnimatePresence>
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
               </div>
             )
           })}
-        </div>
+          </div>
+        </DragDropContext>
       </div>
 
       {/* Image Preview Modal */}
@@ -416,7 +474,7 @@ function App() {
 function TaskCard({ 
   task, status, editingId, editValue, setEditValue, startEditing, 
   saveEdit, setEditingId, moveTask, deleteTask, confirmDelete, 
-  deletingId, setDeletingId 
+  deletingId, setDeletingId, setPreviewImage
 }: { 
   task: Task, 
   status: ColumnType, 
@@ -431,19 +489,25 @@ function TaskCard({
   confirmDelete: (id: number) => void,
   deletingId: number | null,
   setDeletingId: (id: number | null) => void,
-  setPreviewImage: (attachment: Attachment) => void
+  setPreviewImage: (attachment: Attachment) => void,
+  provided?: any,
+  snapshot?: any
 }) {
   const [expanded, setExpanded] = useState(false)
   const isLong = task.title.length > 100
 
   return (
     <motion.div
-      layout
+      ref={provided?.innerRef}
+      {...provided?.draggableProps}
+      {...provided?.dragHandleProps}
+      style={provided?.draggableProps.style}
       initial={{ opacity: 0, scale: 0.9, y: 20 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9, x: -20 }}
-      whileHover={{ y: -4 }}
-      className="bg-gray-800/80 hover:bg-gray-750 backdrop-blur-sm rounded-xl p-4 border border-gray-700/60 shadow-md group transition-all relative overflow-hidden"
+      className={`bg-gray-800/80 hover:bg-gray-750 backdrop-blur-sm rounded-xl p-4 border group relative overflow-hidden ${
+        snapshot?.isDragging ? 'border-cyan-500 shadow-2xl shadow-cyan-500/20 scale-105 z-50' : 'border-gray-700/60 shadow-md'
+      }`}
     >
       {editingId === task.id ? (
         <div className="flex flex-col gap-3 relative z-10">
@@ -532,7 +596,7 @@ function TaskCard({
             </div>
           )}
           
-          <div className="flex items-center justify-between pt-3 border-t border-gray-700/50 mt-1">
+          <div className="flex items-center justify-end pt-3 border-t border-gray-700/50 mt-1">
             <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
                 onClick={() => startEditing(task)}
@@ -548,27 +612,6 @@ function TaskCard({
               >
                 <Trash2 size={16} />
               </button>
-            </div>
-            
-            <div className="flex gap-1.5">
-              {status !== 'todo' && (
-                <button
-                  onClick={() => moveTask(task.id, status === 'doing' ? 'todo' : 'doing')}
-                  className="p-1.5 text-gray-400 hover:text-white bg-gray-700/50 hover:bg-gray-600 rounded-lg transition-all border border-transparent hover:border-gray-500"
-                  title="Geser Kiri"
-                >
-                  <ArrowLeft size={16} />
-                </button>
-              )}
-              {status !== 'done' && (
-                <button
-                  onClick={() => moveTask(task.id, status === 'todo' ? 'doing' : 'done')}
-                  className="p-1.5 text-gray-400 hover:text-white bg-gray-700/50 hover:bg-gray-600 rounded-lg transition-all border border-transparent hover:border-gray-500"
-                  title="Geser Kanan"
-                >
-                  <ArrowRight size={16} />
-                </button>
-              )}
             </div>
           </div>
         </div>
