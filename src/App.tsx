@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Trash2, ArrowRight, ArrowLeft, Edit2, Check, X, AlertTriangle, Clock, Flag, ChevronDown, Paperclip, FileText, FileImage } from 'lucide-react'
+import { Plus, Trash2, ArrowRight, ArrowLeft, Edit2, Check, X, AlertTriangle, Clock, Flag, ChevronDown, Paperclip, FileText, FileImage, Maximize2 } from 'lucide-react'
 
 type Priority = 'low' | 'medium' | 'high'
 type ColumnType = 'todo' | 'doing' | 'done'
@@ -78,6 +78,7 @@ function App() {
   const [inputValue, setInputValue] = useState('')
   const [inputPriority, setInputPriority] = useState<Priority>('medium')
   const [attachment, setAttachment] = useState<Attachment | null>(null)
+  const [previewImage, setPreviewImage] = useState<Attachment | null>(null)
   
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editValue, setEditValue] = useState('')
@@ -352,6 +353,7 @@ function App() {
                           confirmDelete={confirmDelete}
                           deletingId={deletingId}
                           setDeletingId={setDeletingId}
+                          setPreviewImage={setPreviewImage}
                         />
                       ))
                     )}
@@ -362,6 +364,51 @@ function App() {
           })}
         </div>
       </div>
+
+      {/* Image Preview Modal */}
+      <AnimatePresence>
+        {previewImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setPreviewImage(null)}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm cursor-zoom-out"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative max-w-5xl max-h-[90vh] w-full flex flex-col items-center justify-center cursor-default"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button 
+                onClick={() => setPreviewImage(null)}
+                className="absolute -top-12 right-0 p-2 text-gray-400 hover:text-white bg-gray-800/50 hover:bg-gray-700 rounded-full transition-colors"
+              >
+                <X size={24} />
+              </button>
+              <img 
+                src={previewImage.data} 
+                alt={previewImage.name} 
+                className="max-w-full max-h-[80vh] object-contain rounded-xl shadow-2xl border border-gray-700/50" 
+              />
+              <div className="mt-4 flex items-center gap-4 text-gray-300 bg-gray-900/80 px-4 py-2 rounded-xl backdrop-blur-md border border-gray-700/50">
+                <span className="text-sm font-medium truncate max-w-xs">{previewImage.name}</span>
+                <a 
+                  href={previewImage.data} 
+                  download={previewImage.name}
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex items-center gap-2 bg-cyan-600 hover:bg-cyan-500 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-colors"
+                >
+                  <ChevronDown size={14}/> Download
+                </a>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -383,7 +430,8 @@ function TaskCard({
   deleteTask: (id: number) => void,
   confirmDelete: (id: number) => void,
   deletingId: number | null,
-  setDeletingId: (id: number | null) => void
+  setDeletingId: (id: number | null) => void,
+  setPreviewImage: (attachment: Attachment) => void
 }) {
   const [expanded, setExpanded] = useState(false)
   const isLong = task.title.length > 100
@@ -463,11 +511,14 @@ function TaskCard({
           {task.attachment && (
             <div className="mb-4 mt-2">
               {task.attachment.type === 'image' ? (
-                <div className="relative group/img overflow-hidden rounded-lg border border-gray-700">
+                <div className="relative group/img overflow-hidden rounded-lg border border-gray-700 cursor-zoom-in" onClick={() => setPreviewImage(task.attachment!)}>
                   <img src={task.attachment.data} alt="Lampiran" className="w-full max-h-40 object-cover" />
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
-                    <a href={task.attachment.data} download={task.attachment.name} className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg text-xs font-medium text-white transition-colors">
-                      <ChevronDown size={14}/> Download
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-3 backdrop-blur-sm">
+                    <button className="flex items-center gap-1.5 bg-gray-800/80 hover:bg-gray-700 px-3 py-1.5 rounded-lg text-xs font-medium text-white transition-colors">
+                      <Maximize2 size={14}/> Preview
+                    </button>
+                    <a href={task.attachment.data} download={task.attachment.name} onClick={(e) => e.stopPropagation()} className="flex items-center gap-1.5 bg-gray-800/80 hover:bg-gray-700 px-3 py-1.5 rounded-lg text-xs font-medium text-white transition-colors">
+                      <ChevronDown size={14}/>
                     </a>
                   </div>
                 </div>
