@@ -67,17 +67,7 @@ const initialTasks: Task[] = [
 
 
 function App() {
-  const [tasks, setTasks] = useState<Task[]>(() => {
-    const saved = localStorage.getItem('tasks-v2')
-    if (saved) {
-      try {
-        return JSON.parse(saved)
-      } catch {
-        return initialTasks
-      }
-    }
-    return initialTasks
-  })
+  const [tasks, setTasks] = useState<Task[]>(initialTasks)
   
   const [inputValue, setInputValue] = useState('')
   const [inputPriority, setInputPriority] = useState<Priority>('medium')
@@ -95,8 +85,9 @@ function App() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    localStorage.setItem('tasks-v2', JSON.stringify(tasks))
-  }, [tasks])
+    // Clear any existing data so the web always loads clean for new/returning users
+    localStorage.clear()
+  }, [])
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -659,7 +650,7 @@ function TaskCard({
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   )
 }
 
