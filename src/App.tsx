@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Trash2, ArrowRight, ArrowLeft, Edit2, Check, X, AlertTriangle, Clock, Flag, ChevronDown, Paperclip, FileText, FileImage, Maximize2 } from 'lucide-react'
-import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
+import { Plus, Trash2, Edit2, Check, X, AlertTriangle, Clock, Flag, ChevronDown, Paperclip, FileText, FileImage, Maximize2 } from 'lucide-react'
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
+import type { DropResult } from '@hello-pangea/dnd'
 import confetti from 'canvas-confetti'
 
 type Priority = 'low' | 'medium' | 'high'
@@ -160,12 +161,6 @@ function App() {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
     }
-  }
-
-  const moveTask = (taskId: number, newStatus: ColumnType) => {
-    setTasks(tasks.map(task =>
-      task.id === taskId ? { ...task, status: newStatus } : task
-    ))
   }
 
   const confirmDelete = (taskId: number) => {
@@ -371,47 +366,40 @@ function App() {
                       {...provided.droppableProps}
                       className={`space-y-3 min-h-[150px] flex-1 transition-colors rounded-xl ${snapshot.isDraggingOver ? 'bg-gray-700/20' : ''}`}
                     >
-                      <AnimatePresence mode="popLayout">
-                        {columnTasks.length === 0 && !snapshot.isDraggingOver ? (
-                          <motion.div
-                            key="empty"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="h-full flex flex-col items-center justify-center py-12 text-gray-600"
-                          >
-                            <div className="w-12 h-12 border-2 border-dashed border-gray-700/60 rounded-full flex items-center justify-center mb-3">
-                              <Check size={20} className="text-gray-700" />
-                            </div>
-                            <p className="text-sm font-medium">Kosong</p>
-                          </motion.div>
-                        ) : (
-                          columnTasks.map((task, index) => (
-                            <Draggable key={task.id} draggableId={task.id.toString()} index={index}>
-                              {(dragProvided, dragSnapshot) => (
-                                <TaskCard 
-                                  task={task} 
-                                  status={status}
-                                  editingId={editingId}
-                                  editValue={editValue}
-                                  setEditValue={setEditValue}
-                                  startEditing={startEditing}
-                                  saveEdit={saveEdit}
-                                  setEditingId={setEditingId}
-                                  moveTask={moveTask}
-                                  deleteTask={deleteTask}
-                                  confirmDelete={confirmDelete}
-                                  deletingId={deletingId}
-                                  setDeletingId={setDeletingId}
-                                  setPreviewImage={setPreviewImage}
-                                  provided={dragProvided}
-                                  snapshot={dragSnapshot}
-                                />
-                              )}
-                            </Draggable>
-                          ))
-                        )}
-                      </AnimatePresence>
+                      {columnTasks.length === 0 && !snapshot.isDraggingOver ? (
+                        <div
+                          key="empty"
+                          className="h-full flex flex-col items-center justify-center py-12 text-gray-600 animate-pulse"
+                        >
+                          <div className="w-12 h-12 border-2 border-dashed border-gray-700/60 rounded-full flex items-center justify-center mb-3">
+                            <Check size={20} className="text-gray-700" />
+                          </div>
+                          <p className="text-sm font-medium">Kosong</p>
+                        </div>
+                      ) : (
+                        columnTasks.map((task, index) => (
+                          <Draggable key={task.id} draggableId={task.id.toString()} index={index}>
+                            {(dragProvided, dragSnapshot) => (
+                              <TaskCard 
+                                task={task} 
+                                editingId={editingId}
+                                editValue={editValue}
+                                setEditValue={setEditValue}
+                                startEditing={startEditing}
+                                saveEdit={saveEdit}
+                                setEditingId={setEditingId}
+                                deleteTask={deleteTask}
+                                confirmDelete={confirmDelete}
+                                deletingId={deletingId}
+                                setDeletingId={setDeletingId}
+                                setPreviewImage={setPreviewImage}
+                                provided={dragProvided}
+                                snapshot={dragSnapshot}
+                              />
+                            )}
+                          </Draggable>
+                        ))
+                      )}
                       {provided.placeholder}
                     </div>
                   )}
@@ -472,19 +460,17 @@ function App() {
 }
 
 function TaskCard({ 
-  task, status, editingId, editValue, setEditValue, startEditing, 
-  saveEdit, setEditingId, moveTask, deleteTask, confirmDelete, 
-  deletingId, setDeletingId, setPreviewImage
+  task, editingId, editValue, setEditValue, startEditing, 
+  saveEdit, setEditingId, deleteTask, confirmDelete, 
+  deletingId, setDeletingId, setPreviewImage, provided, snapshot
 }: { 
   task: Task, 
-  status: ColumnType, 
   editingId: number | null, 
   editValue: string, 
   setEditValue: (v: string) => void, 
   startEditing: (t: Task) => void, 
   saveEdit: () => void, 
   setEditingId: (id: number | null) => void,
-  moveTask: (id: number, status: ColumnType) => void,
   deleteTask: (id: number) => void,
   confirmDelete: (id: number) => void,
   deletingId: number | null,
@@ -497,16 +483,13 @@ function TaskCard({
   const isLong = task.title.length > 100
 
   return (
-    <motion.div
+    <div
       ref={provided?.innerRef}
       {...provided?.draggableProps}
       {...provided?.dragHandleProps}
       style={provided?.draggableProps.style}
-      initial={{ opacity: 0, scale: 0.9, y: 20 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.9, x: -20 }}
       className={`bg-gray-800/80 hover:bg-gray-750 backdrop-blur-sm rounded-xl p-4 border group relative overflow-hidden ${
-        snapshot?.isDragging ? 'border-cyan-500 shadow-2xl shadow-cyan-500/20 scale-105 z-50' : 'border-gray-700/60 shadow-md'
+        snapshot?.isDragging ? 'border-cyan-500 shadow-2xl shadow-cyan-500/20 z-50 ring-2 ring-cyan-500 ring-offset-2 ring-offset-gray-900' : 'border-gray-700/60 shadow-md'
       }`}
     >
       {editingId === task.id ? (
