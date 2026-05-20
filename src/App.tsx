@@ -141,7 +141,7 @@ function App() {
 
   // Auto-start tour on first visit
   useEffect(() => {
-    const hasSeenTour = localStorage.getItem('hasSeenTour-v2')
+    const hasSeenTour = localStorage.getItem('hasSeenTour-v3')
     if (!hasSeenTour) {
       setRunTour(true)
     }
@@ -254,7 +254,7 @@ function App() {
     const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED]
     if (finishedStatuses.includes(status)) {
       setRunTour(false)
-      localStorage.setItem('hasSeenTour-v2', 'true')
+      localStorage.setItem('hasSeenTour-v3', 'true')
     }
   }
 
