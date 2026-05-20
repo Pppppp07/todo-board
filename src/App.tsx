@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Trash2, ArrowRight, ArrowLeft, Edit2, Check, X, AlertTriangle, Clock, Flag, ChevronDown, PlayCircle, Paperclip, FileText, FileImage } from 'lucide-react'
-// @ts-ignore
-import { Joyride, STATUS } from 'react-joyride'
+import { Plus, Trash2, ArrowRight, ArrowLeft, Edit2, Check, X, AlertTriangle, Clock, Flag, ChevronDown, Paperclip, FileText, FileImage } from 'lucide-react'
 
 type Priority = 'low' | 'medium' | 'high'
 type ColumnType = 'todo' | 'doing' | 'done'
@@ -46,10 +44,10 @@ const getRelativeTime = (timestamp: number) => {
   return 'Baru saja'
 }
 
-const initialTutorialTasks: Task[] = [
+const initialTasks: Task[] = [
   {
     id: Date.now() - 3000,
-    title: 'Halo! 👋 Ini adalah task pertamamu. Coba arahkan mouse ke kartu ini untuk melihat menu aksi.',
+    title: 'Halo! 👋 Ini adalah task pertamamu. Arahkan kursor ke kartu ini untuk mengedit atau menghapus.',
     status: 'todo',
     createdAt: Date.now() - 100000,
     priority: 'high'
@@ -63,51 +61,6 @@ const initialTutorialTasks: Task[] = [
   }
 ]
 
-// Custom Tooltip for Joyride with Framer Motion animations
-function CustomTooltip({
-  continuous,
-  index,
-  step,
-  backProps,
-  closeProps,
-  primaryProps,
-  tooltipProps,
-}: any) {
-  return (
-    <motion.div
-      {...tooltipProps}
-      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -10, scale: 0.95 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-      className="bg-gray-800 border border-cyan-500/30 rounded-2xl p-5 max-w-sm shadow-2xl shadow-cyan-500/20 relative z-50"
-    >
-      {step.title && <h3 className="font-bold text-lg text-white mb-2">{step.title}</h3>}
-      <div className="text-gray-300 text-sm mb-4 leading-relaxed">{step.content}</div>
-      <div className="flex justify-between items-center mt-4 pt-2 border-t border-gray-700/50">
-        <button {...closeProps} className="text-gray-500 hover:text-gray-300 text-sm font-medium transition-colors">
-          Lewati
-        </button>
-        <div className="flex gap-2">
-          {index > 0 && (
-            <button {...backProps} className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg font-medium transition-colors">
-              Kembali
-            </button>
-          )}
-          <motion.button 
-            {...primaryProps} 
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="px-4 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white text-sm rounded-lg font-medium transition-colors shadow-lg shadow-cyan-600/20"
-          >
-            {continuous && !step.isLast ? 'Lanjut' : 'Selesai'}
-          </motion.button>
-        </div>
-      </div>
-    </motion.div>
-  )
-}
-
 
 function App() {
   const [tasks, setTasks] = useState<Task[]>(() => {
@@ -116,10 +69,10 @@ function App() {
       try {
         return JSON.parse(saved)
       } catch {
-        return initialTutorialTasks
+        return initialTasks
       }
     }
-    return initialTutorialTasks
+    return initialTasks
   })
   
   const [inputValue, setInputValue] = useState('')
@@ -131,22 +84,8 @@ function App() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const [deletingId, setDeletingId] = useState<number | null>(null)
   
-  const columns: ColumnType[] = ['todo', 'doing', 'done']
-  
-  // Tutorial State
-  const [runTour, setRunTour] = useState(false)
-  const [tourKey, setTourKey] = useState(0)
-  
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  // Auto-start tour on first visit
-  useEffect(() => {
-    const hasSeenTour = localStorage.getItem('hasSeenTour-v4')
-    if (!hasSeenTour) {
-      setRunTour(true)
-    }
-  }, [])
 
   useEffect(() => {
     localStorage.setItem('tasks-v2', JSON.stringify(tasks))
@@ -250,72 +189,8 @@ function App() {
     return tasks.filter(task => task.status === status)
   }
 
-  const handleJoyrideCallback = (data: any) => {
-    const { status, action } = data
-    const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED]
-    
-    if (finishedStatuses.includes(status)) {
-      setRunTour(false)
-      localStorage.setItem('hasSeenTour-v5', 'true')
-    } else if (action === 'close') {
-      setRunTour(false)
-    }
-  }
-
-  const steps: any[] = [
-    {
-      target: '.tour-input',
-      content: 'Ketik aktivitas atau tugas baru yang ingin kamu kerjakan di sini.',
-      title: 'Selamat Datang!',
-      disableBeacon: true,
-    },
-    {
-      target: '.tour-attachment',
-      content: 'Upload gambar atau dokumen kecil (Maks 500KB) untuk melengkapi tugasmu.',
-      title: 'Lampirkan File',
-      disableBeacon: true,
-    },
-    {
-      target: '.tour-priority',
-      content: 'Pilih tingkat prioritas tugas kamu (Rendah, Sedang, atau Tinggi).',
-      title: 'Tentukan Prioritas',
-      disableBeacon: true,
-    },
-    {
-      target: '.tour-add',
-      content: 'Klik tombol ini untuk menambahkan tugasmu ke dalam daftar "To Do".',
-      disableBeacon: true,
-    },
-    {
-      target: '.tour-columns',
-      content: 'Semua tugasmu akan tersusun di tiga kolom ini. Kamu bisa memindahkannya menggunakan panah di kartu tugas.',
-      title: 'Papan Kerja',
-      disableBeacon: true,
-    }
-  ]
-
-  const joyrideProps: any = {
-    steps,
-    run: runTour,
-    continuous: true,
-    showProgress: true,
-    showSkipButton: true,
-    disableBeacon: true, // Force disable beacon globally
-    disableOverlayClose: true,
-    tooltipComponent: CustomTooltip,
-    callback: handleJoyrideCallback,
-    styles: {
-      options: {
-        arrowColor: '#1f2937',
-        overlayColor: 'rgba(3, 7, 18, 0.85)',
-        zIndex: 1000,
-      }
-    }
-  }
-
   return (
     <div className="min-h-screen bg-gray-900 text-white p-4 md:p-8 relative overflow-hidden font-sans">
-      {runTour && <Joyride key={tourKey} {...joyrideProps} />}
 
       <motion.div
         className="pointer-events-none fixed top-0 left-0 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[100px] z-0"
@@ -374,7 +249,7 @@ function App() {
                   }
                 }}
                 placeholder="Apa yang ingin kamu kerjakan hari ini?"
-                className="tour-input w-full px-4 pt-3 pb-2 bg-transparent focus:outline-none text-gray-200 placeholder:text-gray-500 resize-none overflow-hidden min-h-[44px]"
+                className="w-full px-4 pt-3 pb-2 bg-transparent focus:outline-none text-gray-200 placeholder:text-gray-500 resize-none overflow-hidden min-h-[44px]"
               />
               <div className="flex px-3 pb-2 gap-1 items-center flex-wrap">
                 <input 
@@ -386,14 +261,14 @@ function App() {
                 />
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="tour-attachment p-1.5 rounded-lg transition-colors flex items-center gap-1 text-xs font-medium border border-transparent text-gray-400 hover:text-cyan-400 hover:bg-gray-700/50 mr-2"
+                  className="p-1.5 rounded-lg transition-colors flex items-center gap-1 text-xs font-medium border border-transparent text-gray-400 hover:text-cyan-400 hover:bg-gray-700/50 mr-2"
                   title="Lampirkan File (Maks 500KB)"
                 >
                   <Paperclip size={14} />
                   <span className="hidden sm:inline">Attach</span>
                 </button>
 
-                <div className="tour-priority flex items-center gap-1 border-l border-gray-700 pl-3">
+                <div className="flex items-center gap-1 border-l border-gray-700 pl-3">
                   {(['low', 'medium', 'high'] as Priority[]).map(p => (
                     <button
                       key={p}
@@ -415,7 +290,7 @@ function App() {
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={addTask}
-              className="tour-add mb-2 mr-2 px-6 h-[44px] bg-cyan-600 hover:bg-cyan-500 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 shadow-lg shadow-cyan-600/20 text-white"
+              className="mb-2 mr-2 px-6 h-[44px] bg-cyan-600 hover:bg-cyan-500 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 shadow-lg shadow-cyan-600/20 text-white"
             >
               <Plus size={18} />
               <span className="hidden sm:inline">Add</span>
@@ -424,7 +299,7 @@ function App() {
         </div>
 
         {/* Board Layout (3 Kolom) */}
-        <div className="tour-columns grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {columns.map(status => {
             const config = columnConfig[status]
             const columnTasks = getTasksByStatus(status)
@@ -485,23 +360,6 @@ function App() {
           })}
         </div>
       </div>
-
-      {/* Floating Tutorial Button */}
-      <motion.button 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={() => {
-          setTourKey(Date.now())
-          setRunTour(true)
-        }}
-        className="fixed bottom-6 right-6 flex items-center gap-2 px-4 py-3 text-sm font-medium bg-gray-800/90 text-cyan-400 hover:bg-gray-800 rounded-full transition-colors border border-gray-700 hover:border-cyan-700 shadow-lg shadow-black/50 backdrop-blur-md z-40 group"
-        title="Mulai Tur Visual"
-      >
-        <PlayCircle size={18} className="group-hover:text-cyan-300" />
-        <span className="hidden sm:inline">Lihat Tutorial</span>
-      </motion.button>
     </div>
   )
 }
