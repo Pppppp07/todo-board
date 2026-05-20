@@ -135,12 +135,18 @@ function App() {
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [draggingOver, setDraggingOver] = useState<ColumnType | null>(null)
   const [tutorialStep, setTutorialStep] = useState<number | null>(null)
+  const startTutorial = () => {
+    if (tasks.length === 0) {
+      setTasks(initialTasks)
+    }
+    setTutorialStep(0)
+  }
 
   useEffect(() => {
     // Jalankan tutorial otomatis untuk pendatang baru dalam sesi ini
     const isCompleted = sessionStorage.getItem('todo-tutorial-completed')
     if (!isCompleted) {
-      setTutorialStep(0)
+      startTutorial()
     }
   }, [])
 
@@ -253,6 +259,11 @@ function App() {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
     }
+
+    // Naik ke step berikutnya jika sedang di step membuat tugas
+    if (tutorialStep === 1) {
+      setTutorialStep(2)
+    }
   }
 
   const confirmDelete = (taskId: number) => {
@@ -277,6 +288,11 @@ function App() {
       setTasks(currentTasks => currentTasks.map(task =>
         task.id === taskId ? { ...task, status: newStatus, isExiting: false } : task
       ))
+
+      // Naik ke step berikutnya jika memindahkan tugas via tombol ke In Progress di step 3
+      if (tutorialStep === 3 && newStatus === 'doing') {
+        setTutorialStep(4)
+      }
     }, 250)
   }
 
@@ -351,6 +367,11 @@ function App() {
     targetColumn.splice(destination.index, 0, draggedTask)
 
     setTasks([...columnTodo, ...columnDoing, ...columnDone])
+
+    // Naik ke step berikutnya jika berhasil memindahkan tugas via Drag and Drop ke Done di step 4
+    if (tutorialStep === 4 && destination.droppableId === 'done') {
+      setTutorialStep(5)
+    }
   }
 
   return (
@@ -374,7 +395,7 @@ function App() {
           <div className="flex items-center gap-3 text-sm font-medium text-gray-400">
             <span className="bg-gray-800/80 px-4 py-1.5 rounded-full border border-gray-700 shadow-inner">Total: {tasks.length} Tugas</span>
             <button 
-              onClick={() => setTutorialStep(0)}
+              onClick={startTutorial}
               className="bg-gray-800/80 hover:bg-gray-700/80 hover:text-cyan-400 px-4 py-1.5 rounded-full border border-gray-700 transition-all active:scale-95 flex items-center gap-1.5 shadow-sm font-semibold text-xs"
               title="Buka panduan interaktif"
             >
@@ -682,12 +703,21 @@ function App() {
             >
               Kembali
             </button>
-            <button
-              onClick={nextTutorialStep}
-              className="px-5 py-2 text-xs font-bold text-gray-900 bg-cyan-400 hover:bg-cyan-300 rounded-xl transition-all shadow-md shadow-cyan-400/20 active:scale-95"
-            >
-              {tutorialStep === tourSteps.length - 1 ? 'Selesai 🚀' : 'Lanjut 👉'}
-            </button>
+            
+            {[1, 3, 4].includes(tutorialStep) ? (
+              <span className="text-xs font-semibold text-amber-400 animate-pulse bg-amber-500/10 px-3 py-1.5 rounded-lg border border-amber-500/20">
+                {tutorialStep === 1 && "✍️ Tambahkan tugas baru untuk lanjut..."}
+                {tutorialStep === 3 && "➡️ Klik tombol panah untuk lanjut..."}
+                {tutorialStep === 4 && "🎯 Seret kartu ke Done untuk lanjut..."}
+              </span>
+            ) : (
+              <button
+                onClick={nextTutorialStep}
+                className="px-5 py-2 text-xs font-bold text-gray-900 bg-cyan-400 hover:bg-cyan-300 rounded-xl transition-all shadow-md shadow-cyan-400/20 active:scale-95"
+              >
+                {tutorialStep === tourSteps.length - 1 ? 'Selesai 🚀' : 'Lanjut 👉'}
+              </button>
+            )}
           </div>
         </div>
       )}
