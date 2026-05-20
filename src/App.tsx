@@ -360,13 +360,16 @@ function App() {
         {/* Board Layout (3 Kolom) */}
         <DragDropContext onDragEnd={onDragEnd}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          {columns.map(status => {
+          {columns.map((status, index) => {
             const config = columnConfig[status]
             const columnTasks = getTasksByStatus(status)
 
             return (
-              <div
+              <motion.div
                 key={status}
+                initial={{ opacity: 0, y: 20, filter: 'blur(10px)' }}
+                animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                transition={{ duration: 0.4, delay: index * 0.15, ease: 'easeOut' }}
                 className={`bg-gray-800/40 rounded-2xl p-5 border-t-4 ${config.color} shadow-lg border-x border-b border-gray-700/50 flex flex-col relative`}
               >
                 <div className="absolute inset-0 bg-transparent backdrop-blur-xl rounded-2xl pointer-events-none" style={{ zIndex: -1 }}></div>
@@ -426,7 +429,7 @@ function App() {
                     </div>
                   )}
                 </Droppable>
-              </div>
+              </motion.div>
             )
           })}
           </div>
