@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Trash2, ArrowRight, ArrowLeft, Edit2, Check, X, Info, AlertTriangle, Clock, Flag, ChevronDown, ChevronUp, PlayCircle, Paperclip, FileText, FileImage } from 'lucide-react'
-import Joyride, { Step, CallBackProps, STATUS, TooltipRenderProps } from 'react-joyride'
+import { Plus, Trash2, ArrowRight, ArrowLeft, Edit2, Check, X, AlertTriangle, Clock, Flag, ChevronDown, PlayCircle, Paperclip, FileText, FileImage } from 'lucide-react'
+// @ts-ignore
+import { Joyride, STATUS } from 'react-joyride'
 
 type Priority = 'low' | 'medium' | 'high'
 type ColumnType = 'todo' | 'doing' | 'done'
@@ -71,7 +72,7 @@ function CustomTooltip({
   closeProps,
   primaryProps,
   tooltipProps,
-}: TooltipRenderProps) {
+}: any) {
   return (
     <motion.div
       {...tooltipProps}
@@ -128,8 +129,9 @@ function App() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editValue, setEditValue] = useState('')
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
-  const [showTextTutorial, setShowTextTutorial] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
+  
+  const columns: ColumnType[] = ['todo', 'doing', 'done']
   
   // Tutorial State
   const [runTour, setRunTour] = useState(false)
@@ -247,7 +249,7 @@ function App() {
     return tasks.filter(task => task.status === status)
   }
 
-  const handleJoyrideCallback = (data: CallBackProps) => {
+  const handleJoyrideCallback = (data: any) => {
     const { status } = data
     const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED]
     if (finishedStatuses.includes(status)) {
@@ -256,11 +258,10 @@ function App() {
     }
   }
 
-  const steps: Step[] = [
+  const steps: any[] = [
     {
       target: '.tour-input',
       content: 'Ketik aktivitas atau tugas baru yang ingin kamu kerjakan di sini.',
-      disableBeacon: true,
       title: 'Selamat Datang!',
     },
     {
@@ -284,24 +285,26 @@ function App() {
     }
   ]
 
+  const joyrideProps: any = {
+    steps,
+    run: runTour,
+    continuous: true,
+    showProgress: true,
+    showSkipButton: true,
+    tooltipComponent: CustomTooltip,
+    callback: handleJoyrideCallback,
+    styles: {
+      options: {
+        arrowColor: '#1f2937',
+        overlayColor: 'rgba(3, 7, 18, 0.85)',
+        zIndex: 1000,
+      }
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-900 text-white p-4 md:p-8 relative overflow-hidden font-sans">
-      <Joyride
-        steps={steps}
-        run={runTour}
-        continuous
-        showProgress
-        showSkipButton
-        tooltipComponent={CustomTooltip}
-        callback={handleJoyrideCallback}
-        styles={{
-          options: {
-            arrowColor: '#1f2937',
-            overlayColor: 'rgba(3, 7, 18, 0.85)',
-            zIndex: 1000,
-          }
-        }}
-      />
+      <Joyride {...joyrideProps} />
 
       <motion.div
         className="pointer-events-none fixed top-0 left-0 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[100px] z-0"
@@ -317,7 +320,7 @@ function App() {
         <div className="flex flex-col items-center mb-10 relative">
           <div className="absolute right-0 top-0 flex gap-2">
             <button 
-              onClick={() => { setRunTour(true); setShowTextTutorial(false) }}
+              onClick={() => { setRunTour(true); }}
               className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium bg-gray-800 text-cyan-400 hover:bg-cyan-900/40 rounded-full transition-colors border border-gray-700 hover:border-cyan-700 shadow-sm"
               title="Mulai Tur Visual"
             >
