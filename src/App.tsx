@@ -142,7 +142,7 @@ function App() {
 
   // Auto-start tour on first visit
   useEffect(() => {
-    const hasSeenTour = localStorage.getItem('hasSeenTour-v3')
+    const hasSeenTour = localStorage.getItem('hasSeenTour-v4')
     if (!hasSeenTour) {
       setRunTour(true)
     }
@@ -260,7 +260,7 @@ function App() {
     } else if (finishedStatuses.includes(status)) {
       setRunTour(false)
       setStepIndex(0) // Reset for replay
-      localStorage.setItem('hasSeenTour-v3', 'true')
+      localStorage.setItem('hasSeenTour-v4', 'true')
     } else if (action === 'close') {
       setRunTour(false)
       setStepIndex(0)
@@ -272,25 +272,30 @@ function App() {
       target: '.tour-input',
       content: 'Ketik aktivitas atau tugas baru yang ingin kamu kerjakan di sini.',
       title: 'Selamat Datang!',
+      disableBeacon: true,
     },
     {
       target: '.tour-attachment',
       content: 'Upload gambar atau dokumen kecil (Maks 500KB) untuk melengkapi tugasmu.',
       title: 'Lampirkan File',
+      disableBeacon: true,
     },
     {
       target: '.tour-priority',
       content: 'Pilih tingkat prioritas tugas kamu (Rendah, Sedang, atau Tinggi).',
       title: 'Tentukan Prioritas',
+      disableBeacon: true,
     },
     {
       target: '.tour-add',
       content: 'Klik tombol ini untuk menambahkan tugasmu ke dalam daftar "To Do".',
+      disableBeacon: true,
     },
     {
       target: '.tour-columns',
       content: 'Semua tugasmu akan tersusun di tiga kolom ini. Kamu bisa memindahkannya menggunakan panah di kartu tugas.',
       title: 'Papan Kerja',
+      disableBeacon: true,
     }
   ]
 
