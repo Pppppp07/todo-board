@@ -54,43 +54,6 @@ const columnConfig: Record<ColumnType, { title: string, color: string, emoji: st
   }
 }
 
-interface TourStep {
-  title: string
-  description: string
-  targetId?: string
-}
-
-const tourSteps: TourStep[] = [
-  {
-    title: "Selamat Datang di Todo Board! 👋",
-    description: "Mari kita pelajari cara cepat mengelola tugas-tugasmu dengan antarmuka modern yang dinamis ini. Kami akan memandu langkah-langkahnya sebentar!"
-  },
-  {
-    title: "Buat Tugas Baru 📝",
-    description: "Di form ini, kamu bisa menulis judul tugas, memilih skala prioritas (Low, Medium, High), serta melampirkan file dokumen atau gambar (Maks 500KB) yang bisa dipreview langsung tanpa diunduh.",
-    targetId: "add-task-form"
-  },
-  {
-    title: "Kolom Status Tugas 📋",
-    description: "Papan ini dibagi menjadi 3 kolom: To Do (Tugas Baru), In Progress (Sedang Dikerjakan), dan Done (Selesai). Kamu bisa mengawasi semua progres tugasmu di sini.",
-    targetId: "board-layout"
-  },
-  {
-    title: "Kartu Tugas Interaktif 🃏",
-    description: "Setiap tugas memiliki kartu interaktif. Kamu bisa mengedit teksnya, menghapusnya, dan menggesernya secara instan menggunakan tombol panah (Geser Kiri/Kanan) tanpa seret-melepas.",
-    targetId: "tutorial-first-card"
-  },
-  {
-    title: "Geser & Lepas (Drag and Drop) 🎯",
-    description: "Seret kartu tugasmu langsung ke kolom lain! Rasakan sensasi aura bersinar saat kartu didekatkan ke kolom tujuan, dan bersiaplah menyambut ledakan konfeti saat tugas sukses dipindah ke kolom Done!",
-    targetId: "board-layout"
-  },
-  {
-    title: "Kamu Siap Memulai! 🚀",
-    description: "Kini kamu sudah menguasai cara pakai Todo Board. Mulailah mengelola produktivitas harimu dengan mudah dan menyenangkan!"
-  }
-]
-
 const getRelativeTime = (timestamp: number) => {
   const rtf = new Intl.RelativeTimeFormat('id', { numeric: 'auto' })
   const daysDifference = Math.round((timestamp - Date.now()) / (1000 * 60 * 60 * 24))
@@ -135,27 +98,24 @@ function App() {
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [draggingOver, setDraggingOver] = useState<ColumnType | null>(null)
   const [tutorialStep, setTutorialStep] = useState<number | null>(null)
-  const startTutorial = () => {
-    if (tasks.length === 0) {
-      setTasks(initialTasks)
-    }
-    setTutorialStep(0)
-  }
 
   useEffect(() => {
     // Jalankan tutorial otomatis untuk pendatang baru dalam sesi ini
     const isCompleted = sessionStorage.getItem('todo-tutorial-completed')
     if (!isCompleted) {
-      startTutorial()
+      setTutorialStep(0)
     }
   }, [])
 
   useEffect(() => {
     if (tutorialStep !== null) {
-      const step = tourSteps[tutorialStep]
-      if (step.targetId) {
+      let targetId = ''
+      if (tutorialStep === 1) targetId = 'add-task-form'
+      else if (tutorialStep === 2 || tutorialStep === 3) targetId = 'tutorial-first-card'
+
+      if (targetId) {
         setTimeout(() => {
-          const el = document.getElementById(step.targetId!)
+          const el = document.getElementById(targetId)
           if (el) {
             el.scrollIntoView({ behavior: 'smooth', block: 'center' })
           }
@@ -163,22 +123,6 @@ function App() {
       }
     }
   }, [tutorialStep])
-
-  const nextTutorialStep = () => {
-    if (tutorialStep !== null) {
-      if (tutorialStep < tourSteps.length - 1) {
-        setTutorialStep(tutorialStep + 1)
-      } else {
-        finishTutorial()
-      }
-    }
-  }
-
-  const prevTutorialStep = () => {
-    if (tutorialStep !== null && tutorialStep > 0) {
-      setTutorialStep(tutorialStep - 1)
-    }
-  }
 
   const finishTutorial = () => {
     setTutorialStep(null)
@@ -252,15 +196,15 @@ function App() {
       priority: inputPriority,
       ...(attachment && { attachment })
     }
-    setTasks([...tasks, newTask])
+    setTasks([newTask, ...tasks])
     setInputValue('')
     setInputPriority('medium')
     setAttachment(null)
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
     }
-
-    // Naik ke step berikutnya jika sedang di step membuat tugas
+    
+    // Auto-advance tutorial ke praktek manual geser
     if (tutorialStep === 1) {
       setTutorialStep(2)
     }
@@ -288,10 +232,10 @@ function App() {
       setTasks(currentTasks => currentTasks.map(task =>
         task.id === taskId ? { ...task, status: newStatus, isExiting: false } : task
       ))
-
-      // Naik ke step berikutnya jika memindahkan tugas via tombol ke In Progress di step 3
-      if (tutorialStep === 3 && newStatus === 'doing') {
-        setTutorialStep(4)
+      
+      // Auto-advance tutorial ke praktek drag & drop
+      if (tutorialStep === 2) {
+        setTutorialStep(3)
       }
     }, 250)
   }
@@ -368,9 +312,9 @@ function App() {
 
     setTasks([...columnTodo, ...columnDoing, ...columnDone])
 
-    // Naik ke step berikutnya jika berhasil memindahkan tugas via Drag and Drop ke Done di step 4
-    if (tutorialStep === 4 && destination.droppableId === 'done') {
-      setTutorialStep(5)
+    // Auto-advance tutorial selesai jika berhasil drag ke Done
+    if (tutorialStep === 3 && destination.droppableId === 'done') {
+      setTutorialStep(4)
     }
   }
 
@@ -395,7 +339,7 @@ function App() {
           <div className="flex items-center gap-3 text-sm font-medium text-gray-400">
             <span className="bg-gray-800/80 px-4 py-1.5 rounded-full border border-gray-700 shadow-inner">Total: {tasks.length} Tugas</span>
             <button 
-              onClick={startTutorial}
+              onClick={() => setTutorialStep(0)}
               className="bg-gray-800/80 hover:bg-gray-700/80 hover:text-cyan-400 px-4 py-1.5 rounded-full border border-gray-700 transition-all active:scale-95 flex items-center gap-1.5 shadow-sm font-semibold text-xs"
               title="Buka panduan interaktif"
             >
@@ -408,9 +352,28 @@ function App() {
         <div 
           id="add-task-form"
           className={`max-w-xl mx-auto bg-gray-800/60 backdrop-blur-xl p-2 rounded-2xl border border-gray-700 shadow-xl flex flex-col mb-10 transition-all focus-within:border-cyan-500/50 focus-within:bg-gray-800/80 ${
-            tutorialStep === 1 ? 'relative z-50 ring-4 ring-cyan-500 shadow-[0_0_30px_rgba(6,182,212,0.5)]' : ''
+            tutorialStep === 1 ? 'relative z-50 ring-4 ring-cyan-500 shadow-[0_0_35px_rgba(6,182,212,0.6)]' : ''
           }`}
         >
+          
+          {/* Practice Tutorial step 1 inline tooltip */}
+          {tutorialStep === 1 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="absolute -bottom-16 left-1/2 -translate-x-1/2 z-50 bg-cyan-600 text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-lg border border-cyan-400 flex items-center gap-2 whitespace-nowrap"
+            >
+              <span className="animate-ping w-2 h-2 rounded-full bg-white inline-block"></span>
+              <span>Ketik tugas barumu lalu tekan Enter ⏎</span>
+              <button 
+                onClick={finishTutorial}
+                className="ml-3 text-[10px] text-cyan-200 hover:text-white underline font-semibold border-none bg-transparent"
+              >
+                Lewati
+              </button>
+              <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-cyan-600 border-t border-l border-cyan-400 rotate-45" />
+            </motion.div>
+          )}
           
           {/* Attachment Preview (if any) */}
           <AnimatePresence>
@@ -594,8 +557,12 @@ function App() {
                                 setPreviewImage={setPreviewImage}
                                 provided={dragProvided}
                                 snapshot={dragSnapshot}
-                                isTutorialTarget={index === 0 && status === 'todo'}
+                                isTutorialTarget={
+                                  (tutorialStep === 2 && index === 0 && status === 'todo') ||
+                                  (tutorialStep === 3 && index === 0 && status === 'doing')
+                                }
                                 tutorialStep={tutorialStep}
+                                finishTutorial={finishTutorial}
                               />
                             )}
                           </Draggable>
@@ -665,60 +632,57 @@ function App() {
         />
       )}
 
-      {/* Tutorial Card */}
-      {tutorialStep !== null && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-md bg-gray-800 border border-cyan-500/30 rounded-2xl shadow-[0_10px_50px_rgba(0,0,0,0.8)] p-5 backdrop-blur-xl">
-          <div className="flex justify-between items-start mb-3">
-            <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider">
-              Tutorial ({tutorialStep + 1} dari {tourSteps.length})
-            </span>
-            <button 
-              onClick={finishTutorial} 
-              className="text-xs text-gray-400 hover:text-white transition-colors"
-            >
-              Skip Tutorial
-            </button>
-          </div>
-          
-          {/* Progress bar */}
-          <div className="w-full bg-gray-700 h-1.5 rounded-full overflow-hidden mb-4">
-            <div 
-              className="bg-cyan-500 h-full transition-all duration-300" 
-              style={{ width: `${((tutorialStep + 1) / tourSteps.length) * 100}%` }}
-            />
-          </div>
-
-          <h3 className="text-lg font-bold text-gray-100 mb-2">
-            {tourSteps[tutorialStep].title}
-          </h3>
-          <p className="text-sm text-gray-300 mb-5 leading-relaxed">
-            {tourSteps[tutorialStep].description}
-          </p>
-
-          <div className="flex justify-between items-center">
-            <button
-              onClick={prevTutorialStep}
-              disabled={tutorialStep === 0}
-              className="px-4 py-2 text-xs font-medium text-gray-400 hover:text-white disabled:opacity-50 disabled:pointer-events-none transition-colors"
-            >
-              Kembali
-            </button>
-            
-            {[1, 3, 4].includes(tutorialStep) ? (
-              <span className="text-xs font-semibold text-amber-400 animate-pulse bg-amber-500/10 px-3 py-1.5 rounded-lg border border-amber-500/20">
-                {tutorialStep === 1 && "✍️ Tambahkan tugas baru untuk lanjut..."}
-                {tutorialStep === 3 && "➡️ Klik tombol panah untuk lanjut..."}
-                {tutorialStep === 4 && "🎯 Seret kartu ke Done untuk lanjut..."}
-              </span>
-            ) : (
+      {/* Tutorial Step 0: Welcome popup */}
+      {tutorialStep === 0 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="w-full max-w-sm bg-gray-800 border border-cyan-500/30 rounded-2xl shadow-[0_10px_50px_rgba(0,0,0,0.8)] p-6 text-center backdrop-blur-xl"
+          >
+            <div className="text-3xl mb-3">🎓</div>
+            <h3 className="text-lg font-bold text-gray-100 mb-2">Mulai Panduan Cepat</h3>
+            <p className="text-xs text-gray-300 mb-5 leading-relaxed">
+              Yuk belajar cara mengelola tugas di papan ini dengan latihan langsung. Hanya butuh waktu 1 menit!
+            </p>
+            <div className="flex gap-2">
               <button
-                onClick={nextTutorialStep}
-                className="px-5 py-2 text-xs font-bold text-gray-900 bg-cyan-400 hover:bg-cyan-300 rounded-xl transition-all shadow-md shadow-cyan-400/20 active:scale-95"
+                onClick={finishTutorial}
+                className="flex-1 py-2 text-xs font-semibold text-gray-400 hover:text-white transition-colors"
               >
-                {tutorialStep === tourSteps.length - 1 ? 'Selesai 🚀' : 'Lanjut 👉'}
+                Lewati
               </button>
-            )}
-          </div>
+              <button
+                onClick={() => setTutorialStep(1)}
+                className="flex-[2] py-2 text-xs font-bold text-gray-900 bg-cyan-400 hover:bg-cyan-300 rounded-xl transition-all shadow-md shadow-cyan-400/20 active:scale-95"
+              >
+                Mulai Praktek! 👉
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Tutorial Step 4: Complete popup */}
+      {tutorialStep === 4 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="w-full max-w-sm bg-gray-800 border border-emerald-500/30 rounded-2xl shadow-[0_10px_50px_rgba(0,0,0,0.8)] p-6 text-center backdrop-blur-xl"
+          >
+            <div className="text-3xl mb-3">🎉</div>
+            <h3 className="text-lg font-bold text-gray-100 mb-2">Luar Biasa, Kamu Berhasil!</h3>
+            <p className="text-xs text-gray-300 mb-5 leading-relaxed">
+              Kamu telah mempraktekkan cara menambah tugas, memindahkan manual (klik panah), serta Drag and Drop!
+            </p>
+            <button
+              onClick={finishTutorial}
+              className="w-full py-2.5 text-xs font-bold text-gray-900 bg-emerald-400 hover:bg-emerald-300 rounded-xl transition-all shadow-md shadow-emerald-400/20 active:scale-95"
+            >
+              Selesai & Mulai Bekerja! 🚀
+            </button>
+          </motion.div>
         </div>
       )}
     </div>
@@ -729,7 +693,7 @@ function TaskCard({
   task, status, editingId, editValue, setEditValue, startEditing, 
   saveEdit, setEditingId, moveTask, deleteTask, confirmDelete, 
   deletingId, setDeletingId, setPreviewImage, provided, snapshot,
-  isTutorialTarget, tutorialStep
+  isTutorialTarget, tutorialStep, finishTutorial
 }: { 
   task: Task, 
   status: ColumnType,
@@ -748,7 +712,8 @@ function TaskCard({
   provided?: any,
   snapshot?: any,
   isTutorialTarget?: boolean,
-  tutorialStep?: number | null
+  tutorialStep?: number | null,
+  finishTutorial?: () => void
 }) {
   const [expanded, setExpanded] = useState(false)
   const isLong = task.title.length > 100
@@ -758,8 +723,8 @@ function TaskCard({
       ref={provided?.innerRef}
       {...provided?.draggableProps}
       style={provided?.draggableProps.style}
-      id={isTutorialTarget && tutorialStep === 3 ? "tutorial-first-card" : undefined}
-      className={`pb-3 ${isTutorialTarget && tutorialStep === 3 ? 'relative z-50' : ''}`}
+      id={isTutorialTarget && (tutorialStep === 2 || tutorialStep === 3) ? "tutorial-first-card" : undefined}
+      className={`pb-3 ${isTutorialTarget && (tutorialStep === 2 || tutorialStep === 3) ? 'relative z-50' : ''}`}
     >
       <motion.div
         {...provided?.dragHandleProps}
@@ -772,7 +737,7 @@ function TaskCard({
         className={`bg-gray-800/80 hover:bg-gray-750 backdrop-blur-sm rounded-xl p-4 border group relative overflow-hidden ${
           snapshot?.isDragging ? 'border-cyan-500 shadow-2xl shadow-cyan-500/20 z-50 ring-2 ring-cyan-500 ring-offset-2 ring-offset-gray-900' : 'border-gray-700/60 shadow-md'
         } ${
-          isTutorialTarget && tutorialStep === 3 ? 'ring-4 ring-cyan-500 shadow-[0_0_30px_rgba(6,182,212,0.5)] border-cyan-400' : ''
+          isTutorialTarget && tutorialStep === 3 ? 'ring-4 ring-cyan-500 shadow-[0_0_35px_rgba(6,182,212,0.6)] border-cyan-400' : ''
         }`}
       >
       {editingId === task.id ? (
@@ -815,6 +780,25 @@ function TaskCard({
         </div>
       ) : (
         <div className="relative z-10">
+          {/* Practice Tutorial step 3 inline tooltip */}
+          {isTutorialTarget && tutorialStep === 3 && (
+            <motion.div
+              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              className="absolute -top-16 left-1/2 -translate-x-1/2 z-50 bg-cyan-600 text-white text-[11px] font-bold py-2 px-3 rounded-xl shadow-lg border border-cyan-400 flex items-center gap-1.5 whitespace-nowrap"
+            >
+              <span className="animate-ping w-2 h-2 rounded-full bg-white inline-block"></span>
+              <span>Seret (drag) kartu ini ke kolom Done! 🎯</span>
+              <button 
+                onClick={finishTutorial}
+                className="ml-2 text-[10px] text-cyan-200 hover:text-white underline font-semibold border-none bg-transparent"
+              >
+                Lewati
+              </button>
+              <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-cyan-600 border-b border-r border-cyan-400 rotate-45" />
+            </motion.div>
+          )}
+
           <div className="flex justify-between items-start mb-3">
             <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${priorityConfig[task.priority].color} flex items-center gap-1 border border-transparent`}>
               {priorityConfig[task.priority].label}
@@ -891,13 +875,35 @@ function TaskCard({
                 </button>
               )}
               {status !== 'done' && (
-                <button
-                  onClick={() => moveTask(task.id, status === 'todo' ? 'doing' : 'done')}
-                  className="p-1.5 text-gray-400 hover:text-white bg-gray-700/50 hover:bg-gray-600 rounded-lg transition-all border border-transparent hover:border-gray-500"
-                  title="Geser Kanan"
-                >
-                  <ArrowRight size={16} />
-                </button>
+                <div className="relative">
+                  <button
+                    onClick={() => moveTask(task.id, status === 'todo' ? 'doing' : 'done')}
+                    className={`p-1.5 text-gray-400 hover:text-white bg-gray-700/50 hover:bg-gray-600 rounded-lg transition-all border ${
+                      isTutorialTarget && tutorialStep === 2 ? 'ring-4 ring-amber-400 border-amber-300 bg-amber-500/20 text-white relative z-50' : 'border-transparent hover:border-gray-500'
+                    }`}
+                    title="Geser Kanan"
+                  >
+                    <ArrowRight size={16} />
+                  </button>
+                  
+                  {/* Practice Tutorial step 2 inline tooltip */}
+                  {isTutorialTarget && tutorialStep === 2 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      className="absolute bottom-full right-0 mb-2.5 z-50 bg-amber-500 text-gray-900 text-[11px] font-bold py-1.5 px-3 rounded-lg shadow-lg border border-amber-300 flex items-center gap-1.5 whitespace-nowrap"
+                    >
+                      <span>Geser manual di sini! ➡️</span>
+                      <button 
+                        onClick={finishTutorial}
+                        className="ml-2 text-[10px] text-amber-900 hover:text-black underline font-semibold border-none bg-transparent"
+                      >
+                        Lewati
+                      </button>
+                      <div className="absolute -bottom-1.5 right-3 w-3 h-3 bg-amber-500 border-b border-r border-amber-300 rotate-45" />
+                    </motion.div>
+                  )}
+                </div>
               )}
             </div>
           </div>
