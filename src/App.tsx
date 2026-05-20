@@ -331,6 +331,12 @@ function App() {
       />
 
       <div className="relative z-10 max-w-6xl mx-auto">
+        {/* Tutorial Overlay Backdrop */}
+        {tutorialStep !== null && (
+          <div 
+            className="fixed inset-0 bg-black/75 backdrop-blur-[2px] z-30 transition-opacity duration-300"
+          />
+        )}
         {/* Header */}
         <div className="flex flex-col items-center mb-10 relative">
           <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 mb-3 text-center mt-8 md:mt-0 drop-shadow-sm">
@@ -624,13 +630,7 @@ function App() {
         )}
       </AnimatePresence>
 
-      {/* Tutorial Overlay Backdrop */}
-      {tutorialStep !== null && (
-        <div 
-          className="fixed inset-0 bg-black/70 backdrop-blur-[2px] z-40 transition-opacity duration-300"
-          onClick={finishTutorial}
-        />
-      )}
+
 
       {/* Tutorial Step 0: Welcome popup */}
       {tutorialStep === 0 && (
