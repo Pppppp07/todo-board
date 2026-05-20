@@ -263,6 +263,7 @@ function App() {
       target: '.tour-input',
       content: 'Ketik aktivitas atau tugas baru yang ingin kamu kerjakan di sini.',
       title: 'Selamat Datang!',
+      disableBeacon: true,
     },
     {
       target: '.tour-attachment',
@@ -304,7 +305,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-4 md:p-8 relative overflow-hidden font-sans">
-      <Joyride {...joyrideProps} />
+      {runTour && <Joyride {...joyrideProps} />}
 
       <motion.div
         className="pointer-events-none fixed top-0 left-0 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[100px] z-0"
