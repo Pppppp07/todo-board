@@ -84,6 +84,8 @@ function App() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const [deletingId, setDeletingId] = useState<number | null>(null)
   
+  const columns: ColumnType[] = ['todo', 'doing', 'done']
+  
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
