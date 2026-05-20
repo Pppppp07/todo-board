@@ -135,7 +135,7 @@ function App() {
   
   // Tutorial State
   const [runTour, setRunTour] = useState(false)
-  const [stepIndex, setStepIndex] = useState(0)
+  const [tourKey, setTourKey] = useState(0)
   
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -251,19 +251,14 @@ function App() {
   }
 
   const handleJoyrideCallback = (data: any) => {
-    const { status, action, index, type } = data
+    const { status, action } = data
     const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED]
     
-    if (type === 'step:after' || type === 'error:target_not_found') {
-      // Update state to advance the tour
-      setStepIndex(index + (action === 'prev' ? -1 : 1))
-    } else if (finishedStatuses.includes(status)) {
+    if (finishedStatuses.includes(status)) {
       setRunTour(false)
-      setStepIndex(0) // Reset for replay
-      localStorage.setItem('hasSeenTour-v4', 'true')
+      localStorage.setItem('hasSeenTour-v5', 'true')
     } else if (action === 'close') {
       setRunTour(false)
-      setStepIndex(0)
     }
   }
 
@@ -302,7 +297,6 @@ function App() {
   const joyrideProps: any = {
     steps,
     run: runTour,
-    stepIndex,
     continuous: true,
     showProgress: true,
     showSkipButton: true,
@@ -321,7 +315,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-4 md:p-8 relative overflow-hidden font-sans">
-      {runTour && <Joyride {...joyrideProps} />}
+      {runTour && <Joyride key={tourKey} {...joyrideProps} />}
 
       <motion.div
         className="pointer-events-none fixed top-0 left-0 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[100px] z-0"
@@ -499,7 +493,7 @@ function App() {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => {
-          setStepIndex(0)
+          setTourKey(Date.now())
           setRunTour(true)
         }}
         className="fixed bottom-6 right-6 flex items-center gap-2 px-4 py-3 text-sm font-medium bg-gray-800/90 text-cyan-400 hover:bg-gray-800 rounded-full transition-colors border border-gray-700 hover:border-cyan-700 shadow-lg shadow-black/50 backdrop-blur-md z-40 group"
