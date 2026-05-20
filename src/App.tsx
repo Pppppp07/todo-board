@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Trash2, ArrowRight, ArrowLeft, Edit2, Check, X, AlertTriangle, Clock, Flag, ChevronDown, Paperclip, FileText, FileImage, Maximize2 } from 'lucide-react'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
-import type { DropResult } from '@hello-pangea/dnd'
+import type { DropResult, DragUpdate } from '@hello-pangea/dnd'
 import confetti from 'canvas-confetti'
 
 type Priority = 'low' | 'medium' | 'high'
@@ -30,10 +30,28 @@ const priorityConfig = {
   high: { color: 'bg-rose-500/20 text-rose-400', label: 'High', iconColor: 'text-rose-400' },
 }
 
-const columnConfig: Record<ColumnType, { title: string; emoji: string; color: string }> = {
-  todo: { title: 'To Do', emoji: '📝', color: 'border-blue-500' },
-  doing: { title: 'In Progress', emoji: '⏳', color: 'border-yellow-500' },
-  done: { title: 'Done', emoji: '✅', color: 'border-green-500' }
+const columnConfig: Record<ColumnType, { title: string, color: string, emoji: string, glowBorder: string, glowShadow: string }> = {
+  todo: { 
+    title: 'To Do', 
+    color: 'border-t-cyan-500 border-x-gray-700/50 border-b-gray-700/50', 
+    emoji: '📌',
+    glowBorder: 'border-cyan-400',
+    glowShadow: 'shadow-xl shadow-cyan-500/30'
+  },
+  doing: { 
+    title: 'In Progress', 
+    color: 'border-t-amber-500 border-x-gray-700/50 border-b-gray-700/50', 
+    emoji: '🚀',
+    glowBorder: 'border-amber-400',
+    glowShadow: 'shadow-xl shadow-amber-500/30'
+  },
+  done: { 
+    title: 'Done', 
+    color: 'border-t-emerald-500 border-x-gray-700/50 border-b-gray-700/50', 
+    emoji: '✅',
+    glowBorder: 'border-emerald-400',
+    glowShadow: 'shadow-xl shadow-emerald-500/30'
+  }
 }
 
 const getRelativeTime = (timestamp: number) => {
@@ -78,6 +96,7 @@ function App() {
   const [editValue, setEditValue] = useState('')
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [draggingOver, setDraggingOver] = useState<ColumnType | null>(null)
   
   const columns: ColumnType[] = ['todo', 'doing', 'done']
   
@@ -208,7 +227,12 @@ function App() {
     return tasks.filter(task => task.status === status)
   }
 
+  const onDragUpdate = (update: DragUpdate) => {
+    setDraggingOver((update.destination?.droppableId as ColumnType) || null)
+  }
+
   const onDragEnd = (result: DropResult) => {
+    setDraggingOver(null)
     const { source, destination, draggableId } = result
     
     if (!destination) return
@@ -358,11 +382,12 @@ function App() {
         </div>
 
         {/* Board Layout (3 Kolom) */}
-        <DragDropContext onDragEnd={onDragEnd}>
+        <DragDropContext onDragEnd={onDragEnd} onDragUpdate={onDragUpdate}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {columns.map((status, index) => {
             const config = columnConfig[status]
             const columnTasks = getTasksByStatus(status)
+            const isHovered = draggingOver === status
 
             return (
               <motion.div
@@ -370,7 +395,11 @@ function App() {
                 initial={{ opacity: 0, y: 20, filter: 'blur(10px)' }}
                 animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
                 transition={{ duration: 0.4, delay: index * 0.15, ease: 'easeOut' }}
-                className={`bg-gray-800/40 rounded-2xl p-5 border-t-4 ${config.color} shadow-lg border-x border-b border-gray-700/50 flex flex-col relative`}
+                className={`bg-gray-800/40 rounded-2xl p-5 shadow-lg flex flex-col relative transition-all duration-300 ease-in-out ${
+                  isHovered 
+                    ? `border-2 ${config.glowBorder} ${config.glowShadow} scale-[1.02]`
+                    : `border border-t-4 ${config.color}`
+                }`}
               >
                 <div className="absolute inset-0 bg-transparent backdrop-blur-xl rounded-2xl pointer-events-none" style={{ zIndex: -1 }}></div>
                 <div className="flex items-center justify-between mb-5 relative">
@@ -413,7 +442,7 @@ function App() {
                     <div 
                       ref={provided.innerRef}
                       {...provided.droppableProps}
-                      className={`min-h-[150px] flex-1 transition-colors rounded-xl ${snapshot.isDraggingOver ? 'bg-gray-700/20' : ''}`}
+                      className="min-h-[150px] flex-1 transition-colors rounded-xl"
                     >
                       {columnTasks.length === 0 && !snapshot.isDraggingOver ? (
                         <div
