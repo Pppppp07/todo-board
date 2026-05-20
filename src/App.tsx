@@ -54,6 +54,43 @@ const columnConfig: Record<ColumnType, { title: string, color: string, emoji: st
   }
 }
 
+interface TourStep {
+  title: string
+  description: string
+  targetId?: string
+}
+
+const tourSteps: TourStep[] = [
+  {
+    title: "Selamat Datang di Todo Board! 👋",
+    description: "Mari kita pelajari cara cepat mengelola tugas-tugasmu dengan antarmuka modern yang dinamis ini. Kami akan memandu langkah-langkahnya sebentar!"
+  },
+  {
+    title: "Buat Tugas Baru 📝",
+    description: "Di form ini, kamu bisa menulis judul tugas, memilih skala prioritas (Low, Medium, High), serta melampirkan file dokumen atau gambar (Maks 500KB) yang bisa dipreview langsung tanpa diunduh.",
+    targetId: "add-task-form"
+  },
+  {
+    title: "Kolom Status Tugas 📋",
+    description: "Papan ini dibagi menjadi 3 kolom: To Do (Tugas Baru), In Progress (Sedang Dikerjakan), dan Done (Selesai). Kamu bisa mengawasi semua progres tugasmu di sini.",
+    targetId: "board-layout"
+  },
+  {
+    title: "Kartu Tugas Interaktif 🃏",
+    description: "Setiap tugas memiliki kartu interaktif. Kamu bisa mengedit teksnya, menghapusnya, dan menggesernya secara instan menggunakan tombol panah (Geser Kiri/Kanan) tanpa seret-melepas.",
+    targetId: "tutorial-first-card"
+  },
+  {
+    title: "Geser & Lepas (Drag and Drop) 🎯",
+    description: "Seret kartu tugasmu langsung ke kolom lain! Rasakan sensasi aura bersinar saat kartu didekatkan ke kolom tujuan, dan bersiaplah menyambut ledakan konfeti saat tugas sukses dipindah ke kolom Done!",
+    targetId: "board-layout"
+  },
+  {
+    title: "Kamu Siap Memulai! 🚀",
+    description: "Kini kamu sudah menguasai cara pakai Todo Board. Mulailah mengelola produktivitas harimu dengan mudah dan menyenangkan!"
+  }
+]
+
 const getRelativeTime = (timestamp: number) => {
   const rtf = new Intl.RelativeTimeFormat('id', { numeric: 'auto' })
   const daysDifference = Math.round((timestamp - Date.now()) / (1000 * 60 * 60 * 24))
@@ -97,6 +134,50 @@ function App() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [draggingOver, setDraggingOver] = useState<ColumnType | null>(null)
+  const [tutorialStep, setTutorialStep] = useState<number | null>(null)
+
+  useEffect(() => {
+    // Jalankan tutorial otomatis untuk pendatang baru dalam sesi ini
+    const isCompleted = sessionStorage.getItem('todo-tutorial-completed')
+    if (!isCompleted) {
+      setTutorialStep(0)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (tutorialStep !== null) {
+      const step = tourSteps[tutorialStep]
+      if (step.targetId) {
+        setTimeout(() => {
+          const el = document.getElementById(step.targetId!)
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }
+        }, 150)
+      }
+    }
+  }, [tutorialStep])
+
+  const nextTutorialStep = () => {
+    if (tutorialStep !== null) {
+      if (tutorialStep < tourSteps.length - 1) {
+        setTutorialStep(tutorialStep + 1)
+      } else {
+        finishTutorial()
+      }
+    }
+  }
+
+  const prevTutorialStep = () => {
+    if (tutorialStep !== null && tutorialStep > 0) {
+      setTutorialStep(tutorialStep - 1)
+    }
+  }
+
+  const finishTutorial = () => {
+    setTutorialStep(null)
+    sessionStorage.setItem('todo-tutorial-completed', 'true')
+  }
   
   const columns: ColumnType[] = ['todo', 'doing', 'done']
   
@@ -290,13 +371,25 @@ function App() {
           <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 mb-3 text-center mt-8 md:mt-0 drop-shadow-sm">
             Todo Board
           </h1>
-          <div className="flex items-center gap-4 text-sm font-medium text-gray-400">
+          <div className="flex items-center gap-3 text-sm font-medium text-gray-400">
             <span className="bg-gray-800/80 px-4 py-1.5 rounded-full border border-gray-700 shadow-inner">Total: {tasks.length} Tugas</span>
+            <button 
+              onClick={() => setTutorialStep(0)}
+              className="bg-gray-800/80 hover:bg-gray-700/80 hover:text-cyan-400 px-4 py-1.5 rounded-full border border-gray-700 transition-all active:scale-95 flex items-center gap-1.5 shadow-sm font-semibold text-xs"
+              title="Buka panduan interaktif"
+            >
+              <span>❓</span> <span>Panduan</span>
+            </button>
           </div>
         </div>
 
         {/* Form Input Terstruktur */}
-        <div className="max-w-xl mx-auto bg-gray-800/60 backdrop-blur-xl p-2 rounded-2xl border border-gray-700 shadow-xl flex flex-col mb-10 transition-all focus-within:border-cyan-500/50 focus-within:bg-gray-800/80">
+        <div 
+          id="add-task-form"
+          className={`max-w-xl mx-auto bg-gray-800/60 backdrop-blur-xl p-2 rounded-2xl border border-gray-700 shadow-xl flex flex-col mb-10 transition-all focus-within:border-cyan-500/50 focus-within:bg-gray-800/80 ${
+            tutorialStep === 1 ? 'relative z-50 ring-4 ring-cyan-500 shadow-[0_0_30px_rgba(6,182,212,0.5)]' : ''
+          }`}
+        >
           
           {/* Attachment Preview (if any) */}
           <AnimatePresence>
@@ -383,7 +476,12 @@ function App() {
 
         {/* Board Layout (3 Kolom) */}
         <DragDropContext onDragEnd={onDragEnd} onDragUpdate={onDragUpdate}>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          <div 
+            id="board-layout"
+            className={`grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto transition-all ${
+              (tutorialStep === 2 || tutorialStep === 4) ? 'relative z-50 ring-4 ring-cyan-500 shadow-[0_0_30px_rgba(6,182,212,0.5)] bg-gray-900/40 rounded-3xl p-3' : ''
+            }`}
+          >
           {columns.map((status, index) => {
             const config = columnConfig[status]
             const columnTasks = getTasksByStatus(status)
@@ -475,6 +573,8 @@ function App() {
                                 setPreviewImage={setPreviewImage}
                                 provided={dragProvided}
                                 snapshot={dragSnapshot}
+                                isTutorialTarget={index === 0 && status === 'todo'}
+                                tutorialStep={tutorialStep}
                               />
                             )}
                           </Draggable>
@@ -535,6 +635,62 @@ function App() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Tutorial Overlay Backdrop */}
+      {tutorialStep !== null && (
+        <div 
+          className="fixed inset-0 bg-black/70 backdrop-blur-[2px] z-40 transition-opacity duration-300"
+          onClick={finishTutorial}
+        />
+      )}
+
+      {/* Tutorial Card */}
+      {tutorialStep !== null && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-md bg-gray-800 border border-cyan-500/30 rounded-2xl shadow-[0_10px_50px_rgba(0,0,0,0.8)] p-5 backdrop-blur-xl">
+          <div className="flex justify-between items-start mb-3">
+            <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider">
+              Tutorial ({tutorialStep + 1} dari {tourSteps.length})
+            </span>
+            <button 
+              onClick={finishTutorial} 
+              className="text-xs text-gray-400 hover:text-white transition-colors"
+            >
+              Skip Tutorial
+            </button>
+          </div>
+          
+          {/* Progress bar */}
+          <div className="w-full bg-gray-700 h-1.5 rounded-full overflow-hidden mb-4">
+            <div 
+              className="bg-cyan-500 h-full transition-all duration-300" 
+              style={{ width: `${((tutorialStep + 1) / tourSteps.length) * 100}%` }}
+            />
+          </div>
+
+          <h3 className="text-lg font-bold text-gray-100 mb-2">
+            {tourSteps[tutorialStep].title}
+          </h3>
+          <p className="text-sm text-gray-300 mb-5 leading-relaxed">
+            {tourSteps[tutorialStep].description}
+          </p>
+
+          <div className="flex justify-between items-center">
+            <button
+              onClick={prevTutorialStep}
+              disabled={tutorialStep === 0}
+              className="px-4 py-2 text-xs font-medium text-gray-400 hover:text-white disabled:opacity-50 disabled:pointer-events-none transition-colors"
+            >
+              Kembali
+            </button>
+            <button
+              onClick={nextTutorialStep}
+              className="px-5 py-2 text-xs font-bold text-gray-900 bg-cyan-400 hover:bg-cyan-300 rounded-xl transition-all shadow-md shadow-cyan-400/20 active:scale-95"
+            >
+              {tutorialStep === tourSteps.length - 1 ? 'Selesai 🚀' : 'Lanjut 👉'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -542,7 +698,8 @@ function App() {
 function TaskCard({ 
   task, status, editingId, editValue, setEditValue, startEditing, 
   saveEdit, setEditingId, moveTask, deleteTask, confirmDelete, 
-  deletingId, setDeletingId, setPreviewImage, provided, snapshot
+  deletingId, setDeletingId, setPreviewImage, provided, snapshot,
+  isTutorialTarget, tutorialStep
 }: { 
   task: Task, 
   status: ColumnType,
@@ -559,7 +716,9 @@ function TaskCard({
   setDeletingId: (id: number | null) => void,
   setPreviewImage: (attachment: Attachment) => void,
   provided?: any,
-  snapshot?: any
+  snapshot?: any,
+  isTutorialTarget?: boolean,
+  tutorialStep?: number | null
 }) {
   const [expanded, setExpanded] = useState(false)
   const isLong = task.title.length > 100
@@ -569,7 +728,8 @@ function TaskCard({
       ref={provided?.innerRef}
       {...provided?.draggableProps}
       style={provided?.draggableProps.style}
-      className="pb-3"
+      id={isTutorialTarget && tutorialStep === 3 ? "tutorial-first-card" : undefined}
+      className={`pb-3 ${isTutorialTarget && tutorialStep === 3 ? 'relative z-50' : ''}`}
     >
       <motion.div
         {...provided?.dragHandleProps}
@@ -581,6 +741,8 @@ function TaskCard({
         transition={{ duration: 0.25, ease: 'easeInOut' }}
         className={`bg-gray-800/80 hover:bg-gray-750 backdrop-blur-sm rounded-xl p-4 border group relative overflow-hidden ${
           snapshot?.isDragging ? 'border-cyan-500 shadow-2xl shadow-cyan-500/20 z-50 ring-2 ring-cyan-500 ring-offset-2 ring-offset-gray-900' : 'border-gray-700/60 shadow-md'
+        } ${
+          isTutorialTarget && tutorialStep === 3 ? 'ring-4 ring-cyan-500 shadow-[0_0_30px_rgba(6,182,212,0.5)] border-cyan-400' : ''
         }`}
       >
       {editingId === task.id ? (
