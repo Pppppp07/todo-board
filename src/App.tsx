@@ -384,7 +384,7 @@ function App() {
                     <div 
                       ref={provided.innerRef}
                       {...provided.droppableProps}
-                      className={`space-y-3 min-h-[150px] flex-1 transition-colors rounded-xl ${snapshot.isDraggingOver ? 'bg-gray-700/20' : ''}`}
+                      className={`min-h-[150px] flex-1 transition-colors rounded-xl ${snapshot.isDraggingOver ? 'bg-gray-700/20' : ''}`}
                     >
                       {columnTasks.length === 0 && !snapshot.isDraggingOver ? (
                         <div
@@ -507,21 +507,24 @@ function TaskCard({
   const isLong = task.title.length > 100
 
   return (
-    <motion.div
+    <div
       ref={provided?.innerRef}
       {...provided?.draggableProps}
-      {...provided?.dragHandleProps}
       style={provided?.draggableProps.style}
-      initial={{ opacity: 0, filter: 'blur(8px)' }}
-      animate={{ 
-        opacity: task.isExiting ? 0 : 1,
-        filter: task.isExiting ? 'blur(8px)' : 'blur(0px)'
-      }}
-      transition={{ duration: 0.25, ease: 'easeInOut' }}
-      className={`bg-gray-800/80 hover:bg-gray-750 backdrop-blur-sm rounded-xl p-4 border group relative overflow-hidden ${
-        snapshot?.isDragging ? 'border-cyan-500 shadow-2xl shadow-cyan-500/20 z-50 ring-2 ring-cyan-500 ring-offset-2 ring-offset-gray-900' : 'border-gray-700/60 shadow-md'
-      }`}
+      className="pb-3"
     >
+      <motion.div
+        {...provided?.dragHandleProps}
+        initial={{ opacity: 0, filter: 'blur(8px)' }}
+        animate={{ 
+          opacity: task.isExiting ? 0 : 1,
+          filter: task.isExiting ? 'blur(8px)' : 'blur(0px)'
+        }}
+        transition={{ duration: 0.25, ease: 'easeInOut' }}
+        className={`bg-gray-800/80 hover:bg-gray-750 backdrop-blur-sm rounded-xl p-4 border group relative overflow-hidden ${
+          snapshot?.isDragging ? 'border-cyan-500 shadow-2xl shadow-cyan-500/20 z-50 ring-2 ring-cyan-500 ring-offset-2 ring-offset-gray-900' : 'border-gray-700/60 shadow-md'
+        }`}
+      >
       {editingId === task.id ? (
         <div className="flex flex-col gap-3 relative z-10">
           <textarea
@@ -650,7 +653,8 @@ function TaskCard({
           </div>
         </div>
       )}
-    </motion.div>
+      </motion.div>
+    </div>
   )
 }
 
