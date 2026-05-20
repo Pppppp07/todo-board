@@ -476,7 +476,10 @@ function App() {
             const config = columnConfig[status]
             const columnTasks = getTasksByStatus(status)
             const isHovered = draggingOver === status
-            const isTutorialColumn = (tutorialStep === 2 && status === 'todo') || (tutorialStep === 3 && status === 'doing')
+            const isTutorialColumn = 
+              (tutorialStep === 2 && status === 'todo') || 
+              (tutorialStep === 3 && (status === 'doing' || status === 'done'))
+            const isDestinationColumn = tutorialStep === 3 && status === 'done'
 
             return (
               <motion.div
@@ -489,7 +492,13 @@ function App() {
                     ? `border-2 ${config.glowBorder} ${config.glowShadow} scale-[1.02]`
                     : `border border-t-4 ${config.color}`
                 } ${
-                  isTutorialColumn ? 'z-40 shadow-[0_0_40px_rgba(6,182,212,0.15)] ring-1 ring-cyan-500/20' : ''
+                  isTutorialColumn ? 'z-40' : ''
+                } ${
+                  isDestinationColumn 
+                    ? 'ring-2 ring-emerald-500/80 ring-dashed shadow-[0_0_40px_rgba(16,185,129,0.3)] bg-emerald-950/10' 
+                    : isTutorialColumn 
+                      ? 'shadow-[0_0_40px_rgba(6,182,212,0.15)] ring-1 ring-cyan-500/20' 
+                      : ''
                 }`}
               >
                 <div className="absolute inset-0 bg-transparent backdrop-blur-xl rounded-2xl pointer-events-none" style={{ zIndex: -1 }}></div>
