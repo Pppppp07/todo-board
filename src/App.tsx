@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Trash2, Edit2, Check, X, AlertTriangle, Clock, Flag, ChevronDown, Paperclip, FileText, FileImage, Maximize2 } from 'lucide-react'
+import { Plus, Trash2, ArrowRight, ArrowLeft, Edit2, Check, X, AlertTriangle, Clock, Flag, ChevronDown, Paperclip, FileText, FileImage, Maximize2 } from 'lucide-react'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 import type { DropResult } from '@hello-pangea/dnd'
 import confetti from 'canvas-confetti'
@@ -165,6 +165,12 @@ function App() {
 
   const confirmDelete = (taskId: number) => {
     setDeletingId(taskId)
+  }
+
+  const moveTask = (taskId: number, newStatus: ColumnType) => {
+    setTasks(tasks.map(task =>
+      task.id === taskId ? { ...task, status: newStatus } : task
+    ))
   }
 
   const deleteTask = (taskId: number) => {
@@ -383,12 +389,14 @@ function App() {
                             {(dragProvided, dragSnapshot) => (
                               <TaskCard 
                                 task={task} 
+                                status={status}
                                 editingId={editingId}
                                 editValue={editValue}
                                 setEditValue={setEditValue}
                                 startEditing={startEditing}
                                 saveEdit={saveEdit}
                                 setEditingId={setEditingId}
+                                moveTask={moveTask}
                                 deleteTask={deleteTask}
                                 confirmDelete={confirmDelete}
                                 deletingId={deletingId}
@@ -461,17 +469,19 @@ function App() {
 }
 
 function TaskCard({ 
-  task, editingId, editValue, setEditValue, startEditing, 
-  saveEdit, setEditingId, deleteTask, confirmDelete, 
+  task, status, editingId, editValue, setEditValue, startEditing, 
+  saveEdit, setEditingId, moveTask, deleteTask, confirmDelete, 
   deletingId, setDeletingId, setPreviewImage, provided, snapshot
 }: { 
   task: Task, 
+  status: ColumnType,
   editingId: number | null, 
   editValue: string, 
   setEditValue: (v: string) => void, 
   startEditing: (t: Task) => void, 
   saveEdit: () => void, 
   setEditingId: (id: number | null) => void,
+  moveTask: (id: number, status: ColumnType) => void,
   deleteTask: (id: number) => void,
   confirmDelete: (id: number) => void,
   deletingId: number | null,
@@ -580,7 +590,7 @@ function TaskCard({
             </div>
           )}
           
-          <div className="flex items-center justify-end pt-3 border-t border-gray-700/50 mt-1">
+          <div className="flex items-center justify-between pt-3 border-t border-gray-700/50 mt-1">
             <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
                 onClick={() => startEditing(task)}
@@ -596,6 +606,27 @@ function TaskCard({
               >
                 <Trash2 size={16} />
               </button>
+            </div>
+
+            <div className="flex gap-1.5">
+              {status !== 'todo' && (
+                <button
+                  onClick={() => moveTask(task.id, status === 'doing' ? 'todo' : 'doing')}
+                  className="p-1.5 text-gray-400 hover:text-white bg-gray-700/50 hover:bg-gray-600 rounded-lg transition-all border border-transparent hover:border-gray-500"
+                  title="Geser Kiri"
+                >
+                  <ArrowLeft size={16} />
+                </button>
+              )}
+              {status !== 'done' && (
+                <button
+                  onClick={() => moveTask(task.id, status === 'todo' ? 'doing' : 'done')}
+                  className="p-1.5 text-gray-400 hover:text-white bg-gray-700/50 hover:bg-gray-600 rounded-lg transition-all border border-transparent hover:border-gray-500"
+                  title="Geser Kanan"
+                >
+                  <ArrowRight size={16} />
+                </button>
+              )}
             </div>
           </div>
         </div>
