@@ -476,6 +476,7 @@ function App() {
             const config = columnConfig[status]
             const columnTasks = getTasksByStatus(status)
             const isHovered = draggingOver === status
+            const isTutorialColumn = (tutorialStep === 2 && status === 'todo') || (tutorialStep === 3 && status === 'doing')
 
             return (
               <motion.div
@@ -487,6 +488,8 @@ function App() {
                   isHovered 
                     ? `border-2 ${config.glowBorder} ${config.glowShadow} scale-[1.02]`
                     : `border border-t-4 ${config.color}`
+                } ${
+                  isTutorialColumn ? 'z-40 shadow-[0_0_40px_rgba(6,182,212,0.15)] ring-1 ring-cyan-500/20' : ''
                 }`}
               >
                 <div className="absolute inset-0 bg-transparent backdrop-blur-xl rounded-2xl pointer-events-none" style={{ zIndex: -1 }}></div>
@@ -726,6 +729,43 @@ function TaskCard({
       id={isTutorialTarget && (tutorialStep === 2 || tutorialStep === 3) ? "tutorial-first-card" : undefined}
       className={`pb-3 ${isTutorialTarget && (tutorialStep === 2 || tutorialStep === 3) ? 'relative z-50' : ''}`}
     >
+      {/* Practice Tutorial step 3 inline tooltip */}
+      {isTutorialTarget && tutorialStep === 3 && (
+        <motion.div
+          initial={{ opacity: 0, y: -10, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          className="absolute -top-12 left-1/2 -translate-x-1/2 z-50 bg-cyan-600 text-white text-[11px] font-bold py-2 px-3 rounded-xl shadow-lg border border-cyan-400 flex items-center gap-1.5 whitespace-nowrap"
+        >
+          <span className="animate-ping w-2 h-2 rounded-full bg-white inline-block"></span>
+          <span>Seret (drag) kartu ini ke kolom Done! 🎯</span>
+          <button 
+            onClick={finishTutorial}
+            className="ml-2 text-[10px] text-cyan-200 hover:text-white underline font-semibold border-none bg-transparent"
+          >
+            Lewati
+          </button>
+          <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-cyan-600 border-b border-r border-cyan-400 rotate-45" />
+        </motion.div>
+      )}
+
+      {/* Practice Tutorial step 2 inline tooltip */}
+      {isTutorialTarget && tutorialStep === 2 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          className="absolute -bottom-12 right-2 z-50 bg-amber-500 text-gray-900 text-[11px] font-bold py-1.5 px-3 rounded-lg shadow-lg border border-amber-300 flex items-center gap-1.5 whitespace-nowrap"
+        >
+          <span>Geser manual di sini! ➡️</span>
+          <button 
+            onClick={finishTutorial}
+            className="ml-2 text-[10px] text-amber-900 hover:text-black underline font-semibold border-none bg-transparent"
+          >
+            Lewati
+          </button>
+          <div className="absolute -top-1.5 right-4 w-3 h-3 bg-amber-500 border-t border-l border-amber-300 rotate-45" />
+        </motion.div>
+      )}
+
       <motion.div
         {...provided?.dragHandleProps}
         initial={{ opacity: 0, filter: 'blur(8px)' }}
@@ -780,25 +820,6 @@ function TaskCard({
         </div>
       ) : (
         <div className="relative z-10">
-          {/* Practice Tutorial step 3 inline tooltip */}
-          {isTutorialTarget && tutorialStep === 3 && (
-            <motion.div
-              initial={{ opacity: 0, y: -10, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              className="absolute -top-16 left-1/2 -translate-x-1/2 z-50 bg-cyan-600 text-white text-[11px] font-bold py-2 px-3 rounded-xl shadow-lg border border-cyan-400 flex items-center gap-1.5 whitespace-nowrap"
-            >
-              <span className="animate-ping w-2 h-2 rounded-full bg-white inline-block"></span>
-              <span>Seret (drag) kartu ini ke kolom Done! 🎯</span>
-              <button 
-                onClick={finishTutorial}
-                className="ml-2 text-[10px] text-cyan-200 hover:text-white underline font-semibold border-none bg-transparent"
-              >
-                Lewati
-              </button>
-              <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-cyan-600 border-b border-r border-cyan-400 rotate-45" />
-            </motion.div>
-          )}
-
           <div className="flex justify-between items-start mb-3">
             <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${priorityConfig[task.priority].color} flex items-center gap-1 border border-transparent`}>
               {priorityConfig[task.priority].label}
@@ -875,35 +896,15 @@ function TaskCard({
                 </button>
               )}
               {status !== 'done' && (
-                <div className="relative">
-                  <button
-                    onClick={() => moveTask(task.id, status === 'todo' ? 'doing' : 'done')}
-                    className={`p-1.5 text-gray-400 hover:text-white bg-gray-700/50 hover:bg-gray-600 rounded-lg transition-all border ${
-                      isTutorialTarget && tutorialStep === 2 ? 'ring-4 ring-amber-400 border-amber-300 bg-amber-500/20 text-white relative z-50' : 'border-transparent hover:border-gray-500'
-                    }`}
-                    title="Geser Kanan"
-                  >
-                    <ArrowRight size={16} />
-                  </button>
-                  
-                  {/* Practice Tutorial step 2 inline tooltip */}
-                  {isTutorialTarget && tutorialStep === 2 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      className="absolute bottom-full right-0 mb-2.5 z-50 bg-amber-500 text-gray-900 text-[11px] font-bold py-1.5 px-3 rounded-lg shadow-lg border border-amber-300 flex items-center gap-1.5 whitespace-nowrap"
-                    >
-                      <span>Geser manual di sini! ➡️</span>
-                      <button 
-                        onClick={finishTutorial}
-                        className="ml-2 text-[10px] text-amber-900 hover:text-black underline font-semibold border-none bg-transparent"
-                      >
-                        Lewati
-                      </button>
-                      <div className="absolute -bottom-1.5 right-3 w-3 h-3 bg-amber-500 border-b border-r border-amber-300 rotate-45" />
-                    </motion.div>
-                  )}
-                </div>
+                <button
+                  onClick={() => moveTask(task.id, status === 'todo' ? 'doing' : 'done')}
+                  className={`p-1.5 text-gray-400 hover:text-white bg-gray-700/50 hover:bg-gray-600 rounded-lg transition-all border ${
+                    isTutorialTarget && tutorialStep === 2 ? 'ring-4 ring-amber-400 border-amber-300 bg-amber-500/20 text-white relative z-50' : 'border-transparent hover:border-gray-500'
+                  }`}
+                  title="Geser Kanan"
+                >
+                  <ArrowRight size={16} />
+                </button>
               )}
             </div>
           </div>
